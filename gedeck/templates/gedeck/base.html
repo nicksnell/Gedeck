@@ -1,0 +1,23 @@
+{% load staticfiles %}<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>{% block title %}Gedeck{% endblock %}</title>
+	<link href="http://fonts.googleapis.com/css?family=Source+Sans+Pro:200,400,700,900" rel="stylesheet">
+	<link href="http://fonts.googleapis.com/css?family=Droid+Sans" rel="stylesheet">
+	<link href="//netdna.bootstrapcdn.com/font-awesome/4.0.1/css/font-awesome.css" rel="stylesheet">
+	<link href="{% static "css/bootstrap.min.css" %}" rel="stylesheet">
+	<link href="{% static "css/gedeck.css" %}" rel="stylesheet">
+</head>
+<body>
+	{% block body %}
+	<div class="main container">
+		{% block header %}<div class="header">
+			<h1>{% block heading %}{% endblock %}</h1>
+		</div>{% endblock %}
+		{% block main %}{% endblock %}
+    </div>
+    {% endblock %}
+</body>
+</html>
+

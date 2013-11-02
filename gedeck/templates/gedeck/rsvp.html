@@ -1,0 +1,29 @@
+{% extends "gedeck/base.html" %}
+
+{% block title %}{{ invite.name }} : RSVP{% endblock %}
+
+{% block heading %}{{ invite.name }}{% endblock %}
+
+{% block main %}
+	<p class="lead muted">Select the guests who wish to RSVP</p>
+	<br>
+	<div class="row">
+	{% for guest in guests %}
+		<div class="col-lg-4 rsvp">
+			<div class="thumbnail">
+				<div class="caption">
+					<h4 class="ruled">{{ guest.name }}</h4>
+					<div class="btn-group btn-group-vertical">
+						<a href="{% url 'rsvp_guest' invite.ref guest.id %}" type="button" class="btn {% if guest.rsvp %}btn-success{% else %}btn-default{% endif %}">
+							RSVP <i class="fa {% if guest.rsvp %}fa-check-square-o{% else %}fa-square-o{% endif %} pull-right"></i>
+						</a>
+						<a href="{% url 'menu_select_for_guest' invite.ref guest.id %}" type="button" class="btn {% if guest.has_menu_options %}btn-success{% else %}btn-default{% endif %}"{% if not guest.rsvp %} disabled="disabled"{% endif %}>
+							Menu Options <i class="fa {% if guest.has_menu_options %}fa-check-square-o{% else %}fa-square-o{% endif %} pull-right"></i>
+						</a>
+					</div>
+				</div>
+			</div>
+		</div>
+	{% endfor %}
+	</div>
+{% endblock %}
