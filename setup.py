@@ -11,6 +11,12 @@ setup(
 	platforms=['Linux',],
 	zip_safe=False,
 	packages=find_packages(exclude=['tests',]),
+	package_data={
+		'gedeck': [
+			'templates/gedeck/*.html',
+			'static/css/*.css',
+		]
+	},
 	install_requires=[
 		'django==1.5.5',
 	]
