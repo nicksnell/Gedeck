@@ -1,6 +1,11 @@
 from django.contrib import admin
 
-from .models import Menu, MenuItem, Guest, GuestSelection, Invitation
+from .models import Event, Menu, MenuItem, Guest, GuestSelection, Invitation
+
+class EventAdmin(admin.ModelAdmin):
+	pass
+
+admin.site.register(Event, EventAdmin)
 
 
 class MenuAdmin(admin.ModelAdmin):
