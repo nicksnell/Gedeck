@@ -10,6 +10,15 @@ MENU_TYPE_CHOICES = (
 	('DESSERT', _(u'Dessert')),
 )
 
+class Event(models.Model):
+
+	active = models.BooleanField(default=True)
+	name = models.CharField(max_length=200)
+
+	def __unicode__(self):
+		return u'Event: %s' % self.name
+
+
 class Menu(models.Model):
 
 	name = models.CharField(max_length=150)
@@ -59,18 +68,19 @@ class Guest(models.Model):
 		if menu_option is not None:
 			menu_option.delete()
 
+
 class Invitation(models.Model):
 
 	created = models.DateTimeField(auto_now_add=True)
 	modified = models.DateTimeField(auto_now=True)
 	active = models.BooleanField(default=True)
-	name = models.CharField(max_length=200)
 	ref = models.CharField(max_length=100)
+	event = models.ForeignKey(Event, blank=True, null=True)
 	menu = models.ForeignKey(Menu, blank=True, null=True)
-	guests = models.ManyToManyField(Guest)
+	guests = models.ManyToManyField(Guest, blank=True)
 
 	def __unicode__(self):
-		return u'Invitation: %s' % self.ref
+		return u'Invitation: #%s' % self.ref
 
 
 class GuestSelection(models.Model):
@@ -91,6 +101,4 @@ class GuestSelection(models.Model):
 
 	def get_dessert(self):
 		return self.items.filter(type='DESSERT')
-
-
 

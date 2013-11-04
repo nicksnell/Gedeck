@@ -1,8 +1,8 @@
 {% extends "gedeck/base.html" %}
 
-{% block title %}{{ invite.name }} : RSVP{% endblock %}
+{% block title %}{{ invite.event.name }} : RSVP{% endblock %}
 
-{% block heading %}{{ invite.name }}{% endblock %}
+{% block heading %}{{ invite.event.name }}{% endblock %}
 
 {% block main %}
 	<p class="lead muted">Select the guests who wish to RSVP</p>

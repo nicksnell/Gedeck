@@ -51,3 +51,5 @@ venv/
 .Python
 
 NOTES.md
+Gedeck.egg-info
+dist/
