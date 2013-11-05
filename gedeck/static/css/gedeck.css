@@ -16,6 +16,10 @@ h1, h2, h3, h4 {
 h1 { font-size: 40px }
 h3, h4 { font-weight: 600 }
 
+.jumbotron {
+  background-color: transparent;
+}
+
 .main {
 	margin-top: 40px;
 }

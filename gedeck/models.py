@@ -75,8 +75,8 @@ class Invitation(models.Model):
 	modified = models.DateTimeField(auto_now=True)
 	active = models.BooleanField(default=True)
 	ref = models.CharField(max_length=100)
-	event = models.ForeignKey(Event, blank=True, null=True)
-	menu = models.ForeignKey(Menu, blank=True, null=True)
+	event = models.ForeignKey(Event)
+	menu = models.ForeignKey(Menu)
 	guests = models.ManyToManyField(Guest, blank=True)
 
 	def __unicode__(self):

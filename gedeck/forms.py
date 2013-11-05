@@ -1,13 +1,18 @@
 from django import forms
+from django.utils.safestring import mark_safe
 
+class MenuChoiceField(forms.ModelChoiceField):
+
+	def label_from_instance(self, obj):
+		return mark_safe(u'<span class="menu-option"><b>%s</b><br><p>%s</p></span>' % (obj.title, obj.description))
 
 class MenuSelectForm(forms.Form):
 	"""Skeleton for a menu selection"""
 
 	guest = forms.CharField(widget=forms.HiddenInput())
-	appetizer = forms.ModelChoiceField(queryset=[], widget=forms.RadioSelect(), required=False, empty_label=None)
-	entree = forms.ModelChoiceField(queryset=[], widget=forms.RadioSelect(), empty_label=None)
-	dessert = forms.ModelChoiceField(queryset=[], widget=forms.RadioSelect(), required=False, empty_label=None)
+	appetizer = MenuChoiceField(queryset=[], widget=forms.RadioSelect(), required=False, empty_label=None)
+	entree = MenuChoiceField(queryset=[], widget=forms.RadioSelect(), empty_label=None)
+	dessert = MenuChoiceField(queryset=[], widget=forms.RadioSelect(), required=False, empty_label=None)
 
 	def __init__(self, *args, **kwargs):
 		# Get our menu and add the choices for each course
