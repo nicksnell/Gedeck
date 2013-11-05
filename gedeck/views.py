@@ -31,7 +31,7 @@ def menu_select(request, invitation_ref=None, guest=None):
 	if invite.guests.count() > 1 and not guest:
 		return render(request, 'gedeck/rsvp.html', {
 			'invite': invite,
-			'guests': invite.guests.all(),
+			'guests': invite.guests.all().order_by('name'),
 		})
 
 	elif guest is not None:
@@ -43,6 +43,7 @@ def menu_select(request, invitation_ref=None, guest=None):
 			return redirect('menu_select', invitation_ref=invite.ref)
 
 	else:
+		# Should only be one guest
 		guest = invite.guests.all()[0]
 
 	guest_selection = None

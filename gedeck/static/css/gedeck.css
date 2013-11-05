@@ -104,6 +104,10 @@ h3, h4 { font-weight: 600 }
   color: #fff;
 }
 
+.menu-option p {
+  color: #9F9F9F;
+}
+
 /* Customize container */
 @media (min-width: 768px) {
   .container {
