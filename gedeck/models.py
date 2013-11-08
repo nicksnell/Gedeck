@@ -82,6 +82,10 @@ class Invitation(models.Model):
 	def __unicode__(self):
 		return u'Invitation: #%s' % self.ref
 
+	@property
+	def total_guests(self):
+		return self.guests.all().count()
+
 
 class GuestSelection(models.Model):
 

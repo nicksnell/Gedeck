@@ -28,10 +28,19 @@ def menu_select(request, invitation_ref=None, guest=None):
 	invite = get_object_or_404(Invitation, ref=invitation_ref, active=True)
 
 	# Check if the invite has multiple guests and we haven't selected one
-	if invite.guests.count() > 1 and not guest:
+	if not guest:
+		# Check to see if the selection is complete
+		all_done = True
+		guests = invite.guests.all().order_by('name')
+
+		for g in guests:
+			if not g.rsvp or not g.has_menu_options():
+				all_done = False
+
 		return render(request, 'gedeck/rsvp.html', {
 			'invite': invite,
-			'guests': invite.guests.all().order_by('name'),
+			'all_done': all_done,
+			'guests': guests,
 		})
 
 	elif guest is not None:

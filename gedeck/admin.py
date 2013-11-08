@@ -33,6 +33,6 @@ admin.site.register(GuestSelection, GuestSelectionAdmin)
 
 
 class InvitationAdmin(admin.ModelAdmin):
-	pass
+	list_display = ['ref', 'event', 'total_guests', 'active']
 
 admin.site.register(Invitation, InvitationAdmin)
