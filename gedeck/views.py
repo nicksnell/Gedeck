@@ -1,8 +1,28 @@
 from django.contrib import messages
 from django.shortcuts import render, get_object_or_404, redirect
 
-from gedeck.forms import MenuSelectForm
-from gedeck.models import Invitation, Guest, GuestSelection
+from gedeck.forms import MenuSelectForm, PreferenceSelectForm
+from gedeck.models import Invitation, Guest, GuestSelection, GuestPreference
+
+
+def invitation(request, invitation_ref=None):
+	"""Landing view for the invitation"""
+
+	invite = get_object_or_404(Invitation, ref=invitation_ref, active=True)
+
+	# Check to see if the selection is complete
+	all_done = True
+	guests = invite.guests.all().order_by('name')
+
+	for g in guests:
+		if not g.has_completed(invite):
+			all_done = False
+
+	return render(request, 'gedeck/rsvp.html', {
+		'invite': invite,
+		'all_done': all_done,
+		'guests': guests,
+	})
 
 
 def rsvp_guest(request, invitation_ref=None, guest=None):
@@ -19,29 +39,17 @@ def rsvp_guest(request, invitation_ref=None, guest=None):
 	guest.rsvp = not guest.rsvp
 	guest.save()
 
-	return redirect('menu_select', invitation_ref=invite.ref)
+	return redirect('invitation', invitation_ref=invite.ref)
 
 
 def menu_select(request, invitation_ref=None, guest=None):
-	"""Main view to select menu options and to save the posted form"""
+	"""Select menu options and save the selected options"""
 
 	invite = get_object_or_404(Invitation, ref=invitation_ref, active=True)
 
-	# Check if the invite has multiple guests and we haven't selected one
+	# Must have a guest to continue
 	if not guest:
-		# Check to see if the selection is complete
-		all_done = True
-		guests = invite.guests.all().order_by('name')
-
-		for g in guests:
-			if not g.rsvp or not g.has_menu_options():
-				all_done = False
-
-		return render(request, 'gedeck/rsvp.html', {
-			'invite': invite,
-			'all_done': all_done,
-			'guests': guests,
-		})
+		return redirect('invitation')
 
 	elif guest is not None:
 		# Check the guest is part of the invitation
@@ -49,11 +57,7 @@ def menu_select(request, invitation_ref=None, guest=None):
 			guest = invite.guests.get(id=guest)
 		except Guest.DoesNotExist:
 			# Wrong guest for the invitation, redirect to guest select
-			return redirect('menu_select', invitation_ref=invite.ref)
-
-	else:
-		# Should only be one guest
-		guest = invite.guests.all()[0]
+			return redirect('invitation', invitation_ref=invite.ref)
 
 	guest_selection = None
 	appetizer, entree, dessert = None, None, None
@@ -94,12 +98,59 @@ def menu_select(request, invitation_ref=None, guest=None):
 
 			selection.save()
 
-			return redirect('menu_select', invitation_ref=invite.ref)
+			return redirect('invitation', invitation_ref=invite.ref)
 
 	else:
 		form = MenuSelectForm(initial=initial_data, menu=invite.menu)
 
-	return render(request, 'gedeck/select.html', {
+	return render(request, 'gedeck/menu.html', {
+		'invite': invite,
+		'guest': guest,
+		'form': form,
+	})
+
+
+def preference_select(request, invitation_ref=None, guest=None):
+	invite = get_object_or_404(Invitation, ref=invitation_ref, active=True)
+
+	# Must have a guest to continue
+	if not guest:
+		return redirect('invitation')
+
+	elif guest is not None:
+		# Check the guest is part of the invitation
+		try:
+			guest = invite.guests.get(id=guest)
+		except Guest.DoesNotExist:
+			# Wrong guest for the invitation, redirect to guest select
+			return redirect('invitation', invitation_ref=invite.ref)
+
+	# Current preference
+	current_preference = guest.get_preference()
+
+	initial = {
+		'preference': current_preference.preference if current_preference is not None else ''
+	}
+
+	if request.method == 'POST':
+		form = PreferenceSelectForm(request.POST, initial=initial)
+
+		if form.is_valid():
+
+			# Save the menu data and redirect to thank you
+			preference, created = GuestPreference.objects.get_or_create(
+				guest=guest
+			)
+
+			preference.preference = form.cleaned_data['preference']
+			preference.save()
+
+			return redirect('invitation', invitation_ref=invite.ref)
+
+	else:
+		form = PreferenceSelectForm(initial=initial)
+
+	return render(request, 'gedeck/preference.html', {
 		'invite': invite,
 		'guest': guest,
 		'form': form,

@@ -43,6 +43,16 @@ class MenuItem(models.Model):
 		return u'Menu item: %s (%s)' % (self.title, self.get_type_display())
 
 
+class Preference(models.Model):
+
+	active = models.BooleanField(default=True)
+	title = models.CharField(max_length=200)
+	description = models.TextField(blank=True)
+
+	def __unicode__(self):
+		return u'Preference: %s' % self.title
+
+
 class Guest(models.Model):
 
 	name = models.CharField(max_length=150)
@@ -59,6 +69,12 @@ class Guest(models.Model):
 		except GuestSelection.DoesNotExist:
 			return None
 
+	def get_preference(self):
+		try:
+			return GuestPreference.objects.get(guest=self)
+		except GuestPreference.DoesNotExist:
+			return None
+
 	def has_menu_options(self):
 		return True if self.get_menu_options() is not None else False
 
@@ -68,24 +84,20 @@ class Guest(models.Model):
 		if menu_option is not None:
 			menu_option.delete()
 
+	def has_preference(self):
+		return True if self.get_preference() is not None else False
 
-class Invitation(models.Model):
+	def has_completed(self, invite):
+		if not self.rsvp:
+			return False
 
-	created = models.DateTimeField(auto_now_add=True)
-	modified = models.DateTimeField(auto_now=True)
-	active = models.BooleanField(default=True)
-	ref = models.CharField(max_length=100)
-	event = models.ForeignKey(Event)
-	menu = models.ForeignKey(Menu)
-	guests = models.ManyToManyField(Guest, blank=True)
+		if invite.menu and not self.has_menu_options():
+			return False
 
-	def __unicode__(self):
-		return u'Invitation: #%s' % self.ref
+		if invite.preference and not self.has_preference():
+			return False
 
-	@property
-	def total_guests(self):
-		return self.guests.all().count()
-
+		return True
 
 class GuestSelection(models.Model):
 
@@ -105,4 +117,34 @@ class GuestSelection(models.Model):
 
 	def get_dessert(self):
 		return self.items.filter(type='DESSERT')
+
+
+class GuestPreference(models.Model):
+
+	created = models.DateTimeField(auto_now_add=True)
+	modified = models.DateTimeField(auto_now=True)
+	guest = models.ForeignKey(Guest)
+	preference = models.TextField()
+
+	def __unicode__(self):
+		return u'Preference @ %s by %s' % (self.created, self.guest.name)
+
+
+class Invitation(models.Model):
+
+	created = models.DateTimeField(auto_now_add=True)
+	modified = models.DateTimeField(auto_now=True)
+	active = models.BooleanField(default=True)
+	ref = models.CharField(max_length=100)
+	event = models.ForeignKey(Event)
+	menu = models.ForeignKey(Menu, blank=True, null=True)
+	preference = models.ForeignKey(Preference, blank=True, null=True)
+	guests = models.ManyToManyField(Guest, blank=True)
+
+	def __unicode__(self):
+		return u'Invitation: #%s' % self.ref
+
+	@property
+	def total_guests(self):
+		return self.guests.all().count()
 

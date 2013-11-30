@@ -1,0 +1,42 @@
+{% extends "gedeck/base.html" %}
+
+{% load markup %}
+
+{% block title %}{{ invite.event.name }} : {{ invite.preference.title }}{% endblock %}
+
+{% block heading %}{{ invite.preference.title }}{% endblock %}
+
+{% block main %}
+	{{ invite.preference.description|markdown }}
+
+	<div class="row">
+		<div class="col-lg-12 menu-selection">
+			<form action="{% url 'preference_select_for_guest' invite.ref guest.id %}" method="post" class="form-horizontal" role="form">
+				{% csrf_token %}
+
+				{% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
+
+				{{ form.non_field_errors }}
+
+				{% for field in form.visible_fields %}
+					<h3>{{ field.label }}</h3>
+					{% if field.errors %}
+						<div class="alert alert-danger">
+							<b>Oops!</b>&nbsp;{{ field.errors }}
+						</div>
+					{% endif %}
+					{{ field }}
+				{% endfor %}
+				<br><br>
+				<button type="submit" class="btn btn-primary">Submit</button>
+				<br><br>
+			</form>
+		</div>
+	</div>
+	<br>
+	<div class="row">
+		<div class="col-lg-12 return">
+			<div class="muted"><a href="{% url 'invitation' invite.ref %}"><i class="fa fa-reply"></i> Back</a></div>
+		</div>
+	</div>
+{% endblock %}
