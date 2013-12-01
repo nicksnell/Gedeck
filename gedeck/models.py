@@ -17,6 +17,11 @@ class Activity(models.Model):
 	name = models.CharField(max_length=200)
 	required = models.BooleanField(default=True)
 
+	def __unicode__(self):
+		return u'%s (%s)' % (self.name, u'Required' if self.required else 'Optional')
+
+	class Meta:
+		verbose_name_plural = 'Activities'
 
 class Event(models.Model):
 
@@ -143,6 +148,9 @@ class GuestActivityRsvp(models.Model):
 	modified = models.DateTimeField(auto_now=True)
 	guest = models.ForeignKey(Guest)
 	activity = models.ForeignKey(Activity)
+
+	def __unicode__(self):
+		return u'%s - %s' % (self.guest.name, self.activity.name)
 
 
 class GuestSelection(models.Model):
