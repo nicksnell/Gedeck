@@ -4,16 +4,25 @@ from django.contrib.auth.models import User
 from django.db import models
 from django.utils.translation import ugettext as _
 
+
 MENU_TYPE_CHOICES = (
 	('APPETIZER', _(u'Appetizer')),
 	('ENTREE', _(u'Entrée')),
 	('DESSERT', _(u'Dessert')),
 )
 
+
+class Activity(models.Model):
+
+	name = models.CharField(max_length=200)
+	required = models.BooleanField(default=True)
+
+
 class Event(models.Model):
 
 	active = models.BooleanField(default=True)
 	name = models.CharField(max_length=200)
+	activities = models.ManyToManyField(Activity)
 
 	def __unicode__(self):
 		return u'Event: %s' % self.name
@@ -48,6 +57,7 @@ class Preference(models.Model):
 	active = models.BooleanField(default=True)
 	title = models.CharField(max_length=200)
 	description = models.TextField(blank=True)
+	required = models.BooleanField(default=True)
 
 	def __unicode__(self):
 		return u'Preference: %s' % self.title
@@ -63,46 +73,83 @@ class Guest(models.Model):
 	def __unicode__(self):
 		return u'%s' % self.name
 
-	def get_menu_options(self):
+	def has_completed(self, invite):
+		"""Check if the user has completed all of the required
+		details for the invite"""
+
+		# RSVP details
+		for activity in invite.event.activities.all():
+			if activity.required:
+				if not self.has_activity_rsvp(activity):
+					return False
+
+		# Menu options
+		if invite.menu and not self.has_menu_options(invite.event):
+			return False
+
+		# Preferences
+		if invite.preference and invite.preference.required and not self.has_preference(invite.event):
+			return False
+
+		return True
+
+	def has_activity_rsvp(self, activity):
+		"""Check if the guest has an rsvp for a specific activity"""
+
 		try:
-			return GuestSelection.objects.get(guest=self)
+			GuestActivityRsvp.objects.get(
+				guest=self,
+				activity=activity
+			)
+		except GuestActivityRsvp.DoesNotExist:
+			return False
+
+		return True
+
+	def get_menu_options(self, event):
+		try:
+			return GuestSelection.objects.get(
+				event=event,
+				guest=self
+			)
 		except GuestSelection.DoesNotExist:
 			return None
 
-	def get_preference(self):
-		try:
-			return GuestPreference.objects.get(guest=self)
-		except GuestPreference.DoesNotExist:
-			return None
+	def has_menu_options(self, event):
+		return True if self.get_menu_options(event) is not None else False
 
-	def has_menu_options(self):
-		return True if self.get_menu_options() is not None else False
-
-	def delete_menu_options(self):
-		menu_option = self.get_menu_options()
+	def delete_menu_options(self, event):
+		menu_option = self.get_menu_options(event)
 
 		if menu_option is not None:
 			menu_option.delete()
 
-	def has_preference(self):
-		return True if self.get_preference() is not None else False
+	def get_preference(self, event):
+		try:
+			return GuestPreference.objects.get(
+				event=event,
+				guest=self
+			)
+		except GuestPreference.DoesNotExist:
+			return None
 
-	def has_completed(self, invite):
-		if not self.rsvp:
-			return False
+	def has_preference(self, event):
+		return True if self.get_preference(event) is not None else False
 
-		if invite.menu and not self.has_menu_options():
-			return False
 
-		if invite.preference and not self.has_preference():
-			return False
+class GuestActivityRsvp(models.Model):
 
-		return True
+	created = models.DateTimeField(auto_now_add=True)
+	modified = models.DateTimeField(auto_now=True)
+	guest = models.ForeignKey(Guest)
+	activity = models.ForeignKey(Activity)
+
 
 class GuestSelection(models.Model):
 
 	created = models.DateTimeField(auto_now_add=True)
 	modified = models.DateTimeField(auto_now=True)
+	event = models.ForeignKey(Event)
 	guest = models.ForeignKey(Guest)
 	items = models.ManyToManyField(MenuItem, blank=True)
 
@@ -123,6 +170,7 @@ class GuestPreference(models.Model):
 
 	created = models.DateTimeField(auto_now_add=True)
 	modified = models.DateTimeField(auto_now=True)
+	event = models.ForeignKey(Event)
 	guest = models.ForeignKey(Guest)
 	preference = models.TextField()
 
@@ -136,6 +184,8 @@ class Invitation(models.Model):
 	modified = models.DateTimeField(auto_now=True)
 	active = models.BooleanField(default=True)
 	ref = models.CharField(max_length=100)
+	lead = models.TextField(blank=True, null=True)
+	lead_on_complete = models.TextField(blank=True, null=True)
 	event = models.ForeignKey(Event)
 	menu = models.ForeignKey(Menu, blank=True, null=True)
 	preference = models.ForeignKey(Preference, blank=True, null=True)

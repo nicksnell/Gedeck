@@ -1,0 +1,47 @@
+{% extends "gedeck/base.html" %}
+
+{% load gedeck_tags %}
+
+{% block title %}{{ invite.event.name }}{% endblock %}
+
+{% block heading %}{{ invite.event.name }}{% endblock %}
+
+{% block main %}
+	{% if not all_done %}
+		<p class="lead muted">{{ invite.lead|default:"Select the guests who wish to RSVP" }}</p>
+	{% else %}
+		<p class="lead">{{ invite.lead_on_complete|default:"<b>All done, Thank you!</b> If you wish to make any changes please select a guest from below:" }}</p>
+	{% endif %}
+	<br>
+	<div class="row">
+	{% for guest in guests %}
+		<div class="col-lg-4 rsvp">
+			<div class="thumbnail">
+				<div class="caption">
+					<h4 class="ruled">{{ guest.name }}</h4>
+					<div class="btn-group btn-group-vertical">
+						{% for activity in invite.event.activities.all %}
+							<a href="{% url 'rsvp' invite.ref activity.id guest.id %}" type="button" class="btn {% if activity|has_activity_rsvp:guest %}btn-success{% else %}btn-default{% endif %}">
+								{{ activity.name }} <i class="fa {% if activity|has_activity_rsvp:guest %}fa-check-square-o{% else %}fa-square-o{% endif %} pull-right"></i>
+							</a>
+						{% endfor %}
+						{% if invite.menu %}{# Check the invite includes menu options #}
+							<a href="{% url 'menu_select_for_guest' invite.ref guest.id %}" type="button" class="btn {% if guest|has_menu_selection:invite.event %}btn-success{% else %}btn-default{% endif %}">
+								Menu Selection <i class="fa {% if guest.has_menu_options %}fa-check-square-o{% else %}fa-square-o{% endif %} pull-right"></i>
+							</a>
+						{% endif %}
+						{% if invite.preference %}
+							<a href="{% url 'preference_select_for_guest' invite.ref guest.id %}" type="button" class="btn {% if guest|has_preference_selection:invite.event %}btn-success{% else %}btn-default{% endif %}">
+								{{ invite.preference.title }}
+								{% if invite.preference.required %}
+									<i class="fa {% if guest.has_preference %}fa-check-square-o{% else %}fa-square-o{% endif %} pull-right"></i>
+								{% endif %}
+							</a>
+						{% endif %}
+					</div>
+				</div>
+			</div>
+		</div>
+	{% endfor %}
+	</div>
+{% endblock %}

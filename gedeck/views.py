@@ -2,7 +2,8 @@ from django.contrib import messages
 from django.shortcuts import render, get_object_or_404, redirect
 
 from gedeck.forms import MenuSelectForm, PreferenceSelectForm
-from gedeck.models import Invitation, Guest, GuestSelection, GuestPreference
+from gedeck.models import Invitation, Activity, Guest, GuestSelection, \
+	GuestActivityRsvp, GuestPreference
 
 
 def invitation(request, invitation_ref=None):
@@ -18,26 +19,30 @@ def invitation(request, invitation_ref=None):
 		if not g.has_completed(invite):
 			all_done = False
 
-	return render(request, 'gedeck/rsvp.html', {
+	return render(request, 'gedeck/invite.html', {
 		'invite': invite,
 		'all_done': all_done,
 		'guests': guests,
 	})
 
 
-def rsvp_guest(request, invitation_ref=None, guest=None):
-	"""RSVP a guest for an event"""
+def rsvp(request, invitation_ref=None, activity=None, guest=None):
+	"""Toggle RSVP for a guest for an activity (part of an event) - events can have
+	multiple activities, we need to ensure we RSVP for the correct activity within the event"""
 
 	guest = get_object_or_404(Guest, id=guest)
 	invite = get_object_or_404(Invitation, ref=invitation_ref, active=True, guests=guest)
+	activity = get_object_or_404(Activity, id=activity)
 
-	if guest.rsvp and guest.has_menu_options():
-		# If we are toggling the RSVP, remove any menu selections
-		guest.delete_menu_options()
+	guest_rsvp, created = GuestActivityRsvp.objects.get_or_create(
+		activity=activity,
+		guest=guest
+	)
 
-	# RSVP the guest
-	guest.rsvp = not guest.rsvp
-	guest.save()
+	# If it hasn't be created now then remove
+	# it (this toggles the rsvp)
+	if not created:
+		guest_rsvp.delete()
 
 	return redirect('invitation', invitation_ref=invite.ref)
 
@@ -62,8 +67,8 @@ def menu_select(request, invitation_ref=None, guest=None):
 	guest_selection = None
 	appetizer, entree, dessert = None, None, None
 
-	if guest.has_menu_options():
-		guest_selection = guest.get_menu_options()
+	if guest.has_menu_options(invite.event):
+		guest_selection = guest.get_menu_options(invite.event)
 
 		appetizer = guest_selection.get_appetizer()
 		entree = guest_selection.get_entree()
@@ -84,6 +89,7 @@ def menu_select(request, invitation_ref=None, guest=None):
 
 			# Save the menu data and redirect to thank you
 			selection, created = GuestSelection.objects.get_or_create(
+				event=invite.event,
 				guest=guest
 			)
 
@@ -126,7 +132,7 @@ def preference_select(request, invitation_ref=None, guest=None):
 			return redirect('invitation', invitation_ref=invite.ref)
 
 	# Current preference
-	current_preference = guest.get_preference()
+	current_preference = guest.get_preference(invite.event)
 
 	initial = {
 		'preference': current_preference.preference if current_preference is not None else ''
@@ -139,6 +145,7 @@ def preference_select(request, invitation_ref=None, guest=None):
 
 			# Save the menu data and redirect to thank you
 			preference, created = GuestPreference.objects.get_or_create(
+				event=invite.event,
 				guest=guest
 			)
 
@@ -155,3 +162,4 @@ def preference_select(request, invitation_ref=None, guest=None):
 		'guest': guest,
 		'form': form,
 	})
+
